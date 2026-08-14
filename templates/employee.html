@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OnboardOps | Employee Portal</title>
+    <meta name="description" content="OnboardOps Employee Portal — View and respond to your onboarding check-ins.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --surface-hover: #f1f5f9;
+            --border: #e2e8f0;
+            --border-strong: #cbd5e1;
+            --text: #0f172a;
+            --text-muted: #475569;
+            --text-soft: #64748b;
+            --accent: #1a73e8;
+            --accent-glow: rgba(26,115,232,0.2);
+            --accent-dim: rgba(26,115,232,0.12);
+            --green: #34a853;
+            --green-dim: rgba(52,168,83,0.12);
+            --font-body: 'Inter', sans-serif;
+            --font-display: 'Outfit', sans-serif;
+            --radius: 12px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 70% 60% at 0% 0%, rgba(26,115,232,0.05) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 100% 100%, rgba(52,168,83,0.05) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── NAV ── */
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2.5rem;
+            height: 64px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .logo {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-links { display: flex; gap: 0.5rem; }
+
+        .nav-links a {
+            padding: 0.45rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .nav-links a:hover { background: var(--surface); color: var(--text); }
+        .nav-links a.active { background: var(--accent-dim); color: var(--accent); }
+
+        /* ── MAIN ── */
+        main {
+            position: relative;
+            z-index: 1;
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 2.5rem 2rem 5rem;
+        }
+
+        /* ── PROGRESS HERO ── */
+        .progress-hero {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        /* Circular progress ring */
+        .ring-wrap { position: relative; flex-shrink: 0; }
+
+        .ring-wrap svg { transform: rotate(-90deg); }
+
+        .ring-track { fill: none; stroke: rgba(255,255,255,0.07); stroke-width: 8; }
+        .ring-fill   { fill: none; stroke: url(#ringGrad); stroke-width: 8; stroke-linecap: round;
+                       transition: stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1); }
+
+        .ring-label {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-display);
+        }
+
+        .ring-pct {
+            font-size: 1.6rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .ring-sub { font-size: 0.65rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+        .hero-text h2 {
+            font-family: var(--font-display);
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+        }
+
+        .hero-text p { color: var(--text-soft); font-size: 0.9rem; line-height: 1.5; }
+
+        .hero-pills { display: flex; gap: 0.5rem; margin-top: 0.85rem; }
+
+        .hero-pill {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.4rem 0.85rem;
+            border-radius: 999px;
+            background: var(--accent-dim);
+            color: var(--accent);
+            border: 1px solid rgba(26,115,232,0.25);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: var(--font-body);
+        }
+
+        .hero-pill:hover {
+            transform: translateY(-2px);
+            background: rgba(26,115,232,0.15);
+            box-shadow: 0 4px 12px rgba(26,115,232,0.1);
+        }
+
+        .hero-pill.green { background: var(--green-dim); color: var(--green); border-color: rgba(52,168,83,0.25); }
+        .hero-pill.green:hover { background: rgba(52,168,83,0.15); box-shadow: 0 4px 12px rgba(52,168,83,0.1); }
+
+
+        /* ── SECTION TITLE ── */
+        .section-title {
+            font-family: var(--font-display);
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
+            background: rgba(167,139,250,0.12);
+            color: var(--accent);
+        }
+
+        /* ── CHECKIN CARD ── */
+        .checkin-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            margin-bottom: 1.25rem;
+            transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+        }
+
+        .checkin-card:hover {
+            border-color: var(--border-strong);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+        }
+
+        .checkin-top {
+            padding: 1.25rem 1.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+
+        .checkin-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.3; }
+        }
+
+        .checkin-prompt {
+            margin: 0.75rem 1.5rem 1rem;
+            padding: 1rem 1.25rem;
+            background: rgba(26,115,232,0.04);
+            border: 1px solid rgba(26,115,232,0.15);
+            border-radius: 10px;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--text);
+        }
+
+        .checkin-form { padding: 0 1.5rem 1.5rem; }
+
+        .quick-replies {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.85rem;
+        }
+
+        .quick-btn {
+            font-size: 0.78rem;
+            padding: 0.4rem 0.85rem;
+            border-radius: 999px;
+            border: 1px solid var(--border-strong);
+            background: transparent;
+            color: var(--text-soft);
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s, border-color 0.2s;
+            font-family: var(--font-body);
+        }
+
+        .quick-btn:hover {
+            background: var(--accent-dim);
+            color: var(--accent);
+            border-color: rgba(167,139,250,0.3);
+        }
+
+        textarea {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            resize: vertical;
+            min-height: 90px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+            margin-bottom: 0.85rem;
+        }
+
+        textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(167,139,250,0.12);
+        }
+
+        textarea::placeholder { color: #334155; }
+
+        .btn-row { display: flex; gap: 0.75rem; }
+
+        .btn-submit {
+            flex: 1;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #a78bfa, #7c3aed);
+            color: #fff;
+            font-family: var(--font-display);
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 20px rgba(124,58,237,0.35);
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(124,58,237,0.45);
+        }
+
+        .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        .btn-escalate {
+            padding: 0.8rem 1.2rem;
+            border: 1px solid rgba(248,113,113,0.3);
+            border-radius: 10px;
+            background: rgba(248,113,113,0.08);
+            color: #f87171;
+            font-family: var(--font-display);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-escalate:hover { background: rgba(248,113,113,0.15); }
+
+        .success-banner {
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.85rem 1rem;
+            background: var(--green-dim);
+            border: 1px solid rgba(52,211,153,0.3);
+            border-radius: 10px;
+            color: var(--green);
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty {
+            text-align: center;
+            padding: 5rem 2rem;
+            border: 1px dashed var(--border);
+            border-radius: var(--radius);
+            color: var(--text-muted);
+        }
+
+        .empty-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+        .empty h3 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: var(--text-soft); margin-bottom: 0.5rem; }
+        .empty p  { font-size: 0.9rem; line-height: 1.5; }
+
+        @media (max-width: 600px) {
+            nav { padding: 0 1rem; }
+            main { padding: 1.5rem 1rem 3rem; }
+            .progress-hero { flex-direction: column; text-align: center; }
+            .hero-pills { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <!-- NAV -->
+    <nav>
+        <div class="logo">OnboardOps</div>
+        <div class="nav-links">
+            {% if user_role == 'manager' %}
+            <a href="/dashboard">Dashboard</a>
+            {% endif %}
+            {% if user_role == 'employee' %}
+            <a href="/employee" class="active">Employee Portal</a>
+            {% endif %}
+            <a href="/login" style="color:var(--text-muted); font-size:0.9rem; margin-left:1rem;">Logout</a>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Progress Hero -->
+        <div class="progress-hero">
+            <div class="ring-wrap">
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                    <defs>
+                        <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%"   stop-color="#a78bfa"/>
+                            <stop offset="100%" stop-color="#38bdf8"/>
+                        </linearGradient>
+                    </defs>
+                    <circle class="ring-track" cx="50" cy="50" r="40"/>
+                    {% set circ = 251.2 %}
+                    {% set offset = circ - (circ * progress_pct / 100) %}
+                    <circle class="ring-fill" cx="50" cy="50" r="40"
+                            stroke-dasharray="{{ circ }}"
+                            stroke-dashoffset="{{ offset }}"/>
+                </svg>
+                <div class="ring-label">
+                    <span class="ring-pct">{{ progress_pct }}%</span>
+                    <span class="ring-sub">Done</span>
+                </div>
+            </div>
+            <div class="hero-text">
+                <h2>Your Onboarding Journey</h2>
+                <p>You've completed <strong>{{ completed }}</strong> out of <strong>{{ total }}</strong> milestones. Keep it up — you're making great progress!</p>
+                <div class="hero-pills">
+                    <button class="hero-pill" onclick="openMilestonesModal('remaining')">{{ total - completed }} Remaining</button>
+                    <button class="hero-pill green" onclick="openMilestonesModal('completed')">{{ completed }} Completed</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Check-ins -->
+        <div class="section-title">
+            Pending Check-Ins
+            {% if checkins %}
+            <span class="section-badge">{{ checkins|length }} awaiting</span>
+            {% endif %}
+        </div>
+
+        {% for checkin in checkins %}
+        <div class="checkin-card" id="card-{{ checkin.checkin_id }}">
+            <div class="checkin-top">
+                <div class="checkin-dot"></div>
+                Milestone Check-In · Awaiting your reply
+            </div>
+            <div class="checkin-prompt">{{ checkin.prompt_text }}</div>
+            <div class="checkin-form">
+                <!-- Quick reply chips -->
+                <div class="quick-replies">
+                    <button class="quick-btn" onclick="fillReply('{{ checkin.checkin_id }}', 'All good, making progress! Working through it steadily. ✅')">All good ✅</button>
+                    <button class="quick-btn" onclick="fillReply('{{ checkin.checkin_id }}', 'Done and completed! 🎉')" style="background:rgba(26,115,232,0.08); border-color:rgba(26,115,232,0.2); color:var(--accent); font-weight:600;">🎓 Training Completed</button>
+                    <button class="quick-btn" onclick="fillReply('{{ checkin.checkin_id }}', 'I have a serious blocker and need immediate help.')">Blocked 🔒</button>
+                    <button class="quick-btn" onclick="fillReply('{{ checkin.checkin_id }}', 'Need help from manager on this one.')">Need help 🙋</button>
+                </div>
+
+                <textarea id="resp-{{ checkin.checkin_id }}"
+                          placeholder="Type your update here, or use a quick reply above…"></textarea>
+
+                <div class="btn-row">
+                    <button class="btn-submit" id="btn-{{ checkin.checkin_id }}"
+                            onclick="submitResponse('{{ checkin.checkin_id }}')">
+                        Send Update →
+                    </button>
+                    <button class="btn-escalate"
+                            onclick="fillReply('{{ checkin.checkin_id }}', 'I have a serious blocker and need immediate help.')">
+                        🚨 Escalate
+                    </button>
+                </div>
+
+                <div class="success-banner" id="success-{{ checkin.checkin_id }}">
+                    ✅ Response received — Agent 2 is evaluating your update. Refresh the dashboard to see changes.
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty">
+            <div class="empty-icon">🎉</div>
+            <h3>All caught up!</h3>
+            <p>No pending check-ins right now. Your manager will dispatch new ones as your milestones progress.</p>
+        </div>
+        {% endfor %}
+    </main>
+
+    <!-- Milestones Modal -->
+    <div id="milestones-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
+        <div style="background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:2rem; width:100%; max-width:500px; color:var(--text); box-shadow:0 25px 50px -12px rgba(0, 0, 0, 0.15); max-height:80vh; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h3 id="milestones-modal-title" style="font-family:var(--font-display);">Milestone Details</h3>
+                <button onclick="closeMilestonesModal()" style="background:transparent; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            <div id="milestones-modal-content"></div>
+        </div>
+    </div>
+
+    <!-- Hidden data store for the modal -->
+    <script>
+        const allMilestones = [
+            {% for ms in all_milestones %}
+            {
+                title: {{ ms.title | tojson }},
+                description: {{ ms.description | tojson }},
+                status: '{{ ms.status }}',
+                category: '{{ ms.category }}'
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+    </script>
+
+    <script>
+        function openMilestonesModal(filterType) {
+            const titleEl = document.getElementById('milestones-modal-title');
+            const contentEl = document.getElementById('milestones-modal-content');
+            
+            let filtered = [];
+            if (filterType === 'completed') {
+                titleEl.textContent = 'Completed Trainings & Activities';
+                filtered = allMilestones.filter(m => m.status === 'COMPLETED');
+            } else {
+                titleEl.textContent = 'Remaining Trainings & Activities';
+                filtered = allMilestones.filter(m => m.status !== 'COMPLETED');
+            }
+            
+            if (filtered.length === 0) {
+                contentEl.innerHTML = '<p style="color:var(--text-muted);">No items found.</p>';
+            } else {
+                contentEl.innerHTML = filtered.map(m => {
+                    let statusColor = 'var(--text-muted)';
+                    let statusBg = 'var(--surface-hover)';
+                    let extra = '';
+                    if (m.status === 'COMPLETED') { statusColor = 'var(--green)'; statusBg = 'rgba(52,168,83,0.1)'; }
+                    else if (m.status === 'IN_PROGRESS') { statusColor = 'var(--accent)'; statusBg = 'rgba(26,115,232,0.1)'; }
+                    else if (m.status === 'ESCALATED') { statusColor = 'var(--red)'; statusBg = 'rgba(234,67,53,0.1)'; }
+                    else if (m.status === 'AWAITING_APPROVAL') { statusColor = '#b45309'; statusBg = 'rgba(251,188,4,0.15)'; extra = '<div style="font-size:0.8rem;color:#b45309;margin-top:0.4rem;">⏳ Awaiting manager approval</div>'; }
+                    return `
+                    <div style="margin-bottom:1rem; padding:1rem; background:var(--surface); border:1px solid var(--border); border-radius:8px;">
+                        <div style="font-weight:600; margin-bottom:0.25rem;">${m.title}</div>
+                        <div style="font-size:0.9rem; color:var(--text-soft); margin-bottom:0.5rem;">${m.description}</div>
+                        <span style="font-size:0.7rem; padding:0.2rem 0.5rem; background:${statusBg}; border-radius:4px; color:${statusColor}; font-weight:600; text-transform:uppercase;">${m.status.replace(/_/g, ' ')} · ${m.category}</span>
+                        ${extra}
+                    </div>
+                `}).join('');
+            }
+            
+            document.getElementById('milestones-modal').style.display = 'flex';
+        }
+
+        function closeMilestonesModal() {
+            document.getElementById('milestones-modal').style.display = 'none';
+        }
+
+        function fillReply(id, text) {
+            const ta = document.getElementById(`resp-${id}`);
+            ta.value = text;
+            ta.focus();
+        }
+
+        async function submitResponse(checkinId) {
+            const text = document.getElementById(`resp-${checkinId}`).value.trim();
+            if (!text) { alert("Please type a response first."); return; }
+
+            const btn = document.getElementById(`btn-${checkinId}`);
+            btn.disabled = true;
+            btn.textContent = "Sending…";
+
+            try {
+                const res = await fetch(`/checkins/${checkinId}/respond`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ response_text: text })
+                });
+
+                if (res.ok) {
+                    document.getElementById(`success-${checkinId}`).style.display = "flex";
+                    btn.style.display = "none";
+                    document.getElementById(`resp-${checkinId}`).disabled = true;
+                    // hide quick reply buttons
+                    document.querySelectorAll(`#card-${checkinId} .quick-btn, #card-${checkinId} .btn-escalate`)
+                            .forEach(b => b.style.display = "none");
+                } else {
+                    btn.disabled = false;
+                    btn.textContent = "Send Update →";
+                    alert("Something went wrong. Please try again.");
+                }
+            } catch (e) {
+                btn.disabled = false;
+                btn.textContent = "Send Update →";
+                alert("Network error — is the server running?");
+            }
+        }
+    </script>
+</body>
+</html>

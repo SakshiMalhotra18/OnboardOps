@@ -344,8 +344,10 @@ def employee_portal(request: Request, db: Session = Depends(get_db)):
     })
 
 @app.get("/")
+@app.get("/api/index")
+@app.get("/api/index.py")
 def read_root():
-    return {"message": "OnboardOps API is running"}
+    return RedirectResponse(url="/login")
 
 # --- Manager: Approve a milestone completion ---
 @app.post("/milestones/{milestone_id}/approve")

@@ -226,8 +226,7 @@ def respond_to_checkin(checkin_id: str, payload: CheckInResponse, background_tas
 def login_page(request: Request):
     return templates.TemplateResponse(request=request, name="login.html")
 
-@app.get("/auth/login")
-@app.post("/auth/login")
+@app.api_route("/auth/login", methods=["GET", "POST"])
 def authenticate(
     request: Request,
     employee_id: Optional[str] = Form(None),
@@ -242,15 +241,15 @@ def authenticate(
     res.set_cookie(key="mock_role", value=r)
     return res
 
-    @app.post("/notifications/mark/{notif_id}")
-    def mark_notification_read(notif_id: int, db: Session = Depends(get_db)):
-        notif = db.query(Notification).filter_by(id=notif_id).first()
-        
-        if not notif:
-            raise HTTPException(status_code=404, detail="Notification not found")
-        notif.is_read = True
-        db.commit()
-        return {"status": "marked_read", "id": notif_id}
+@app.post("/notifications/mark/{notif_id}")
+def mark_notification_read(notif_id: int, db: Session = Depends(get_db)):
+    notif = db.query(Notification).filter_by(id=notif_id).first()
+    
+    if not notif:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    notif.is_read = True
+    db.commit()
+    return {"status": "marked_read", "id": notif_id}
 
 @app.get("/notifications")
 def get_notifications(db: Session = Depends(get_db)):
@@ -284,7 +283,7 @@ def get_audit_logs(limit: int = 20, db: Session = Depends(get_db)):
 
 @app.get("/dashboard")
 def view_dashboard(request: Request, db: Session = Depends(get_db)):
-    manager_id = request.cookies.get("mock_user_id", "M1")
+    manager_id = request.query_params.get("mock_user_id") or request.cookies.get("mock_user_id", "M1")
     plans = db.query(Plan).filter_by(manager_employee_id=manager_id).all()
     
     # Build enriched plan data
@@ -320,7 +319,7 @@ def view_dashboard(request: Request, db: Session = Depends(get_db)):
         "pending_checkins": db.query(CheckIn).join(Milestone).join(Plan).filter(Plan.manager_employee_id == manager_id, CheckIn.status == "PENDING_RESPONSE").count(),
     }
     
-    user_role = request.cookies.get("mock_role", "manager")
+    user_role = request.query_params.get("mock_role") or request.cookies.get("mock_role", "manager")
 
     return templates.TemplateResponse(request=request, name="index.html", context={
         "enriched_plans": enriched_plans,
@@ -330,7 +329,7 @@ def view_dashboard(request: Request, db: Session = Depends(get_db)):
 
 @app.get("/employee")
 def employee_portal(request: Request, db: Session = Depends(get_db)):
-    employee_id = request.cookies.get("mock_user_id", "E1")
+    employee_id = request.query_params.get("mock_user_id") or request.cookies.get("mock_user_id", "E1")
     
     employee_plans = db.query(Plan).filter_by(employee_id=employee_id).all()
     plan_ids = [p.plan_id for p in employee_plans]
@@ -350,7 +349,7 @@ def employee_portal(request: Request, db: Session = Depends(get_db)):
     completed = sum(1 for m in all_milestones if m.status == "COMPLETED")
     progress_pct = int((completed / total) * 100) if total > 0 else 0
     
-    user_role = request.cookies.get("mock_role", "employee")
+    user_role = request.query_params.get("mock_role") or request.cookies.get("mock_role", "employee")
     
     return templates.TemplateResponse(request=request, name="employee.html", context={
         "checkins": checkins,

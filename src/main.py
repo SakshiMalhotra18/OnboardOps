@@ -45,7 +45,12 @@ def dispatch_checkins():
     if new_checkins:
         print(f"[Scheduler] Dispatched {new_checkins} new check-in(s).")
 
-scheduler = BackgroundScheduler()
+import os
+import uuid
+
+# Base directory path resolution for templates on Vercel
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -56,16 +61,19 @@ async def lifespan(app: FastAPI):
         seed_db_data()
     except Exception as e:
         print("[Seeding] Skipped:", e)
-    # Run check-in dispatch every 60 seconds for demo purposes
-    scheduler.add_job(dispatch_checkins, "interval", seconds=60, id="checkin_dispatch")
-    scheduler.add_job(detect_anomalies, "interval", minutes=5, id="anomaly_detection")
-    scheduler.start()
-    print("[Scheduler] Started — dispatching check-ins every 60 seconds.")
+        
+    if not os.getenv("VERCEL"):
+        # Run check-in dispatch every 60 seconds for local dev
+        scheduler.add_job(dispatch_checkins, "interval", seconds=60, id="checkin_dispatch")
+        scheduler.add_job(detect_anomalies, "interval", minutes=5, id="anomaly_detection")
+        scheduler.start()
+        print("[Scheduler] Started — dispatching check-ins every 60 seconds.")
     yield
-    scheduler.shutdown()
+    if not os.getenv("VERCEL"):
+        scheduler.shutdown()
 
 app = FastAPI(title="OnboardOps API", lifespan=lifespan)
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 # --- Schemas ---
 class WebhookPayload(BaseModel):

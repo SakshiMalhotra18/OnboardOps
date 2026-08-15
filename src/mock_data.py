@@ -1,8 +1,4 @@
 import os
-import chromadb
-from llama_index.core import VectorStoreIndex, Document, StorageContext
-from llama_index.vector_stores.chroma import ChromaVectorStore
-from llama_index.embeddings.fastembed import FastEmbedEmbedding
 from src.database import SessionLocal, Base, engine
 from src.models import Employee, AclGroup, Plan, Milestone
 from datetime import date
@@ -108,6 +104,15 @@ def seed_db_data():
     print("Mock relational data seeded successfully.")
 
 def seed_vector_data():
+    try:
+        import chromadb
+        from llama_index.core import VectorStoreIndex, Document, StorageContext
+        from llama_index.vector_stores.chroma import ChromaVectorStore
+        from llama_index.embeddings.fastembed import FastEmbedEmbedding
+    except ImportError:
+        print("Vector store dependencies missing — skipping vector seed.")
+        return
+
     # Initialize embedding model
     print("Initializing embedding model (FastEmbed)...")
     embed_model = FastEmbedEmbedding(model_name="BAAI/bge-small-en-v1.5")

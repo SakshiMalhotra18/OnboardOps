@@ -99,12 +99,29 @@
         .nav-links a:hover { background: var(--surface); color: var(--text); }
         .nav-links a.active { background: var(--accent-dim); color: var(--accent); }
 
-        /* Notification bell */
+        /* Notification bell & Audit */
+        .header-actions { display: flex; align-items: center; gap: 1rem; }
+        
+        .audit-btn {
+            background: rgba(26, 115, 232, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(26, 115, 232, 0.2);
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .audit-btn:hover { background: var(--accent); color: white; }
+
         .notification-bell {
             position: relative;
             font-size: 1.4rem;
             cursor: pointer;
-            margin-left: 1rem;
         }
         .notif-count {
             position: absolute;
@@ -496,17 +513,13 @@
 </head>
 <body>
     <!-- NAV -->
-    <nav class="navbar">
+    <nav>
         <div class="logo">Onboard<span>Ops</span></div>
-        <div class="nav-links">
-            {% if user_role == 'manager' %}
-            <a href="/dashboard" class="active">Dashboard</a>
-            {% endif %}
-            {% if user_role == 'employee' %}
-            <a href="/employee">Employee Portal</a>
-            {% endif %}
-            <a href="/login" style="color:var(--text-muted); font-size:0.9rem; margin-left:1rem;">Logout</a>
-            <div class="notification-bell" title="Notifications" onclick="toggleNotifications()">
+        <div class="header-actions">
+            <button class="audit-btn" onclick="openAuditModal()">
+                <span>🔍</span> Audit Trail
+            </button>
+            <div class="notification-bell" id="bell" title="Notifications" onclick="toggleNotifications()">
                 🔔<span id="notif-count" class="notif-count"></span>
             </div>
             <div id="notif-dropdown" class="notif-dropdown" style="display:none; position:absolute; right:2rem; top:64px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); width:300px; max-height:400px; overflow-y:auto; z-index:200; box-shadow:0 10px 30px rgba(0,0,0,0.1);">
@@ -644,6 +657,17 @@
                                 <span class="ms-tag">{{ ms.category }}</span>
                                 <span class="ms-tag">SLA {{ ms.sla_days }}d</span>
                             </div>
+                            
+                            {% if ms.checkins and ms.checkins[-1].evaluation_method %}
+                            {% set ci = ms.checkins[-1] %}
+                            <div class="agent-badge" title="Method: {{ ci.evaluation_method }} | Confidence: {{ ci.confidence_score }}">
+                                <span>🤖</span> 
+                                <div>
+                                    <strong>Agent 2 Evaluated:</strong> {{ ci.reasoning_summary }} 
+                                    <span style="opacity: 0.6;">(Score: {{ ci.confidence_score }})</span>
+                                </div>
+                            </div>
+                            {% endif %}
                             {% if ms.status == 'AWAITING_APPROVAL' %}
                             <div class="ms-actions">
                                 <button class="btn-ms-approve" onclick="approveMilestone('{{ ms.milestone_id }}')">
@@ -714,6 +738,37 @@
                     <button type="submit" style="padding:0.6rem 1.2rem; background:var(--accent); border:none; color:#000; border-radius:8px; cursor:pointer; font-weight:600; font-family:var(--font-body);">Assign Activity</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Audit Log Modal -->
+    <div id="audit-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
+        <div style="background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:2rem; width:100%; max-width:800px; height:80vh; display:flex; flex-direction:column; color:var(--text); box-shadow:0 25px 50px -12px rgba(0, 0, 0, 0.3);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h3 style="font-family:var(--font-display); font-size: 1.5rem;">🔗 Tamper-Evident Audit Chain</h3>
+                <button onclick="closeAuditModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-muted);">&times;</button>
+            </div>
+            
+            <div id="audit-status" style="margin-bottom: 1rem; padding: 0.75rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600;">
+                Loading chain verification...
+            </div>
+
+            <div style="flex:1; overflow-y:auto; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding: 1rem;">
+                <table style="width:100%; border-collapse:collapse; font-size: 0.85rem;">
+                    <thead>
+                        <tr style="text-align:left; border-bottom: 2px solid var(--border); color:var(--text-muted);">
+                            <th style="padding: 0.5rem;">ID</th>
+                            <th style="padding: 0.5rem;">Event Type</th>
+                            <th style="padding: 0.5rem;">Timestamp</th>
+                            <th style="padding: 0.5rem;">Prev Hash</th>
+                            <th style="padding: 0.5rem;">Entry Hash</th>
+                        </tr>
+                    </thead>
+                    <tbody id="audit-tbody">
+                        <!-- Populated via JS -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -861,11 +916,62 @@
                 console.error('Failed to fetch notifications', e);
             }
         }
-        // Poll every 30 seconds
-        setInterval(fetchNotifications, 30000);
-        // Initial fetch
-        fetchNotifications();
+        
+        // Audit Modal Logic
+        async function openAuditModal() {
+            document.getElementById('audit-modal').style.display = 'flex';
+            const tbody = document.getElementById('audit-tbody');
+            const statusBox = document.getElementById('audit-status');
+            
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2rem;">Fetching chain data...</td></tr>';
+            statusBox.style.background = 'var(--surface-hover)';
+            statusBox.style.color = 'var(--text)';
+            statusBox.textContent = 'Verifying cryptographic chain integrity...';
 
+            try {
+                const res = await fetch('/audit');
+                const data = await res.json();
+                
+                const cv = data.chain_verification;
+                if (cv.valid) {
+                    statusBox.style.background = 'var(--green-dim)';
+                    statusBox.style.color = 'var(--green)';
+                    statusBox.textContent = `✅ Chain verified intact. ${cv.total_records} records secured.`;
+                } else {
+                    statusBox.style.background = 'var(--red-dim)';
+                    statusBox.style.color = 'var(--red)';
+                    statusBox.textContent = `🚨 Chain tampering detected at Log ID ${cv.log_id}: ${cv.error}`;
+                }
+
+                tbody.innerHTML = '';
+                data.audit_logs.forEach(log => {
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid var(--border)';
+                    tr.innerHTML = `
+                        <td style="padding: 0.5rem; color:var(--text-muted); font-weight:600;">#${log.id}</td>
+                        <td style="padding: 0.5rem; font-weight:500;">${log.event_type}</td>
+                        <td style="padding: 0.5rem; color:var(--text-muted);">${new Date(log.timestamp).toLocaleString()}</td>
+                        <td style="padding: 0.5rem; font-family:monospace; color:var(--text-soft);" title="${log.prev_hash}">
+                            ${log.prev_hash.substring(0, 16)}...
+                        </td>
+                        <td style="padding: 0.5rem; font-family:monospace; color:var(--accent);" title="${log.entry_hash}">
+                            ${log.entry_hash.substring(0, 16)}...
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch(e) {
+                statusBox.textContent = 'Error loading audit logs.';
+                console.error(e);
+            }
+        }
+
+        function closeAuditModal() {
+            document.getElementById('audit-modal').style.display = 'none';
+        }
+
+        fetchNotifications();
+        setInterval(fetchNotifications, 10000);
     </script>
 </body>
 </html>

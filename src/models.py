@@ -76,6 +76,8 @@ class Milestone(Base):
 
     plan = relationship("Plan", back_populates="milestones")
 
+from sqlalchemy import Float
+
 class CheckIn(Base):
     __tablename__ = "check_ins"
 
@@ -84,6 +86,9 @@ class CheckIn(Base):
     status = Column(String, default="PENDING_RESPONSE") 
     prompt_text = Column(String, nullable=False)
     response_text = Column(String, nullable=True)
+    confidence_score = Column(Float, nullable=True)
+    reasoning_summary = Column(String, nullable=True)
+    evaluation_method = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     responded_at = Column(DateTime(timezone=True), nullable=True)
 
@@ -98,9 +103,9 @@ class AuditLog(Base):
     actor = Column(String, nullable=True)
     before_state = Column(JSON, nullable=True)
     after_state = Column(JSON, nullable=True)
+    prev_hash = Column(String, nullable=False)
+    entry_hash = Column(String, nullable=False)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
-
-    # No UPDATE/DELETE operations will be performed on this table – append‑only for compliance.
 
 class Notification(Base):
     __tablename__ = "notifications"

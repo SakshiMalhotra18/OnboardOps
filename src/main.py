@@ -273,19 +273,28 @@ def get_notifications(db: Session = Depends(get_db)):
     } for n in recent]
     return {"unread_count": unread, "notifications": notif_list}
 
+from src.audit import verify_audit_chain
+
+@app.get("/audit/verify")
+def verify_audit_log_chain(db: Session = Depends(get_db)):
+    return verify_audit_chain(db)
+
 @app.get("/audit")
-def get_audit_logs(limit: int = 20, db: Session = Depends(get_db)):
-    logs = db.query(AuditLog).order_by(AuditLog.timestamp.desc()).limit(limit).all()
+def get_audit_logs(limit: int = 50, db: Session = Depends(get_db)):
+    logs = db.query(AuditLog).order_by(AuditLog.id.desc()).limit(limit).all()
     
     result = [{
+        "id": log.id,
         "event_type": log.event_type,
         "entity_id": log.entity_id,
         "actor": log.actor,
         "before": log.before_state,
         "after": log.after_state,
-        "timestamp": log.timestamp.isoformat()
+        "prev_hash": log.prev_hash,
+        "entry_hash": log.entry_hash,
+        "timestamp": log.timestamp.isoformat() if log.timestamp else ""
     } for log in logs]
-    return {"audit_logs": result}
+    return {"audit_logs": result, "chain_verification": verify_audit_chain(db)}
 
 @app.get("/dashboard")
 def view_dashboard(request: Request, db: Session = Depends(get_db)):

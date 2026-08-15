@@ -226,13 +226,21 @@ def respond_to_checkin(checkin_id: str, payload: CheckInResponse, background_tas
 def login_page(request: Request):
     return templates.TemplateResponse(request=request, name="login.html")
 
+@app.get("/auth/login")
 @app.post("/auth/login")
-def authenticate(response: Response, employee_id: str = Form(...), role: str = Form(...)):
-    # Setting a simple unencrypted cookie for mock auth
-    response = RedirectResponse(url="/dashboard" if role == "manager" else "/employee", status_code=303)
-    response.set_cookie(key="mock_user_id", value=employee_id)
-    response.set_cookie(key="mock_role", value=role)
-    return response
+def authenticate(
+    request: Request,
+    employee_id: Optional[str] = Form(None),
+    role: Optional[str] = Form(None)
+):
+    emp_id = employee_id or request.query_params.get("employee_id", "M1")
+    r = role or request.query_params.get("role", "manager")
+    
+    target_url = "/dashboard" if r == "manager" else "/employee"
+    res = RedirectResponse(url=target_url, status_code=303)
+    res.set_cookie(key="mock_user_id", value=emp_id)
+    res.set_cookie(key="mock_role", value=r)
+    return res
 
     @app.post("/notifications/mark/{notif_id}")
     def mark_notification_read(notif_id: int, db: Session = Depends(get_db)):

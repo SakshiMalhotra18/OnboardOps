@@ -137,23 +137,13 @@
         <div class="logo">Onboard<span>Ops</span></div>
         <p class="subtitle">Select a persona to enter the platform</p>
 
-        <form action="/auth/login" method="POST">
-            <!-- Simulating Manager Login -->
-            <input type="hidden" name="employee_id" value="M1">
-            <input type="hidden" name="role" value="manager">
-            <button type="submit" class="login-btn manager">
-                Login as Manager (Priya Patel)
-            </button>
-        </form>
+        <a href="/auth/login?employee_id=M1&role=manager" class="login-btn manager" style="display:block; text-decoration:none; box-sizing:border-box;">
+            Login as Manager (Priya Patel)
+        </a>
 
-        <form action="/auth/login" method="POST">
-            <!-- Simulating Employee Login -->
-            <input type="hidden" name="employee_id" value="E1">
-            <input type="hidden" name="role" value="employee">
-            <button type="submit" class="login-btn employee">
-                Login as Employee (Alex Smith)
-            </button>
-        </form>
+        <a href="/auth/login?employee_id=E1&role=employee" class="login-btn employee" style="display:block; text-decoration:none; box-sizing:border-box;">
+            Login as Employee (Alex Smith)
+        </a>
     </div>
 
 </body>

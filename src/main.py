@@ -344,10 +344,8 @@ def employee_portal(request: Request, db: Session = Depends(get_db)):
     })
 
 @app.get("/")
-@app.get("/api/index")
-@app.get("/api/index.py")
-def read_root():
-    return RedirectResponse(url="/login")
+def read_root(request: Request):
+    return templates.TemplateResponse(request=request, name="login.html")
 
 # --- Manager: Approve a milestone completion ---
 @app.post("/milestones/{milestone_id}/approve")

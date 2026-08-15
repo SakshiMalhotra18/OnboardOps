@@ -93,12 +93,13 @@ templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 @app.middleware("http")
 async def fix_vercel_paths(request: Request, call_next):
-    # Vercel sends the true user-requested path in x-matched-path header
-    matched_path = request.headers.get("x-matched-path")
-    if matched_path:
-        request.scope["path"] = matched_path
-    elif request.scope.get("path") in ("/api/index.py", "/api/index", "/api/index/"):
-        request.scope["path"] = "/"
+    path = request.scope.get("path", "")
+    if path.startswith("/api/index.py"):
+        new_path = path[13:]
+        request.scope["path"] = new_path if new_path else "/"
+    elif path.startswith("/api/index"):
+        new_path = path[10:]
+        request.scope["path"] = new_path if new_path else "/"
     return await call_next(request)
 
 # --- Schemas ---

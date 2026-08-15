@@ -600,10 +600,10 @@
                         </div>
                         <span class="badge 
                             {% if has_escalation %}escalated
-                            {% elif plan.status == 'ACTIVE' %}active
+                            {% elif plan.status in ['ACTIVE', 'APPROVED'] %}active
                             {% else %}pending{% endif %}">
                             {% if has_escalation %}🚨 Escalated
-                            {% elif plan.status == 'ACTIVE' %}Active
+                            {% elif plan.status in ['ACTIVE', 'APPROVED'] %}Active
                             {% else %}Needs Approval{% endif %}
                         </span>
                     </div>

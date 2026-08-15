@@ -91,23 +91,20 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="OnboardOps API", lifespan=lifespan)
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
-def clean_vercel_path(path: str) -> str:
-    if not path:
-        return "/"
-    path = path.split("?")[0]
-    if path.startswith("/api/index.py"):
-        path = path[13:]
-    elif path.startswith("/api/index"):
-        path = path[10:]
-    return path if path else "/"
-
 @app.middleware("http")
 async def fix_vercel_paths(request: Request, call_next):
-    forwarded_uri = request.headers.get("x-forwarded-uri")
-    if forwarded_uri:
-        request.scope["path"] = clean_vercel_path(forwarded_uri)
+    # Vercel passes the original requested path in __path__ query parameter
+    path_param = request.query_params.get("__path__")
+    if path_param:
+        request.scope["path"] = path_param.split("?")[0]
     else:
-        request.scope["path"] = clean_vercel_path(request.scope.get("path", ""))
+        path = request.scope.get("path", "")
+        if path.startswith("/api/index.py"):
+            new_path = path[13:]
+            request.scope["path"] = new_path if new_path else "/"
+        elif path.startswith("/api/index"):
+            new_path = path[10:]
+            request.scope["path"] = new_path if new_path else "/"
     return await call_next(request)
 
 # --- Schemas ---

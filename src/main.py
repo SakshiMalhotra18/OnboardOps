@@ -50,18 +50,34 @@ import uuid
 
 # Base directory path resolution for templates on Vercel
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
+possible_dirs = [
+    os.path.join(BASE_DIR, "templates"),
+    os.path.join(BASE_DIR, "api", "templates"),
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates"),
+    "templates"
+]
+TEMPLATES_DIR = next((d for d in possible_dirs if os.path.exists(d)), "templates")
+
+def ensure_db_seeded():
+    try:
+        Base.metadata.create_all(bind=engine)
+        db = SessionLocal()
+        from src.models import Employee
+        if not db.query(Employee).first():
+            db.close()
+            from src.mock_data import seed_db_data
+            seed_db_data()
+        else:
+            db.close()
+    except Exception as e:
+        print("[ensure_db_seeded] Error:", e)
+
+# Always attempt initial DB seeding on module import for serverless
+ensure_db_seeded()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create tables and auto-seed demo data (safe on re-runs — checks before inserting)
-    Base.metadata.create_all(bind=engine)
-    try:
-        from src.mock_data import seed_db_data
-        seed_db_data()
-    except Exception as e:
-        print("[Seeding] Skipped:", e)
-        
+    ensure_db_seeded()
     if not os.getenv("VERCEL"):
         # Run check-in dispatch every 60 seconds for local dev
         scheduler.add_job(dispatch_checkins, "interval", seconds=60, id="checkin_dispatch")

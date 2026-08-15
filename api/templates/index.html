@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OnboardOps | Manager Dashboard</title>
+    <meta name="description" content="OnboardOps Manager Dashboard — Monitor and approve employee onboarding plans in real time.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --surface-hover: #f1f5f9;
+            --border: #e2e8f0;
+            --border-strong: #cbd5e1;
+            --text: #0f172a;
+            --text-muted: #475569;
+            --text-soft: #64748b;
+            --accent: #1a73e8;
+            --accent-dim: rgba(26, 115, 232, 0.12);
+            --purple: #8ab4f8; 
+            --purple-dim: rgba(26, 115, 232, 0.08);
+            --green: #34a853;
+            --green-dim: rgba(52, 168, 83, 0.12);
+            --red: #ea4335;
+            --red-dim: rgba(234, 67, 53, 0.12);
+            --yellow: #fbbc04;
+            --yellow-dim: rgba(251, 188, 4, 0.15);
+            --font-body: 'Inter', sans-serif;
+            --font-display: 'Outfit', sans-serif;
+            --radius: 12px;
+            --radius-sm: 6px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            scroll-padding-top: 64px;
+        }
+
+        /* Animated mesh background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 10% 10%, rgba(26, 115, 232, 0.05) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 90% 80%, rgba(52, 168, 83, 0.05) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 40% at 50% 50%, rgba(251, 188, 4, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── NAV ─────────────────────────────────── */
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2.5rem;
+            height: 64px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .logo {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.02em;
+        }
+
+        .logo span { color: var(--accent); }
+
+        .nav-links { display: flex; gap: 0.5rem; }
+
+        .nav-links a {
+            padding: 0.45rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .nav-links a:hover { background: var(--surface); color: var(--text); }
+        .nav-links a.active { background: var(--accent-dim); color: var(--accent); }
+
+        /* Notification bell */
+        .notification-bell {
+            position: relative;
+            font-size: 1.4rem;
+            cursor: pointer;
+            margin-left: 1rem;
+        }
+        .notif-count {
+            position: absolute;
+            top: -6px;
+            right: -10px;
+            background: var(--red);
+            color: #fff;
+            border-radius: 999px;
+            padding: 0 4px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+
+        /* ── MAIN ─────────────────────────────────── */
+        main {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 3rem 2.5rem 5rem;
+        }
+
+        /* ── PAGE HEADER ─────────────────────────── */
+        .page-header { margin-bottom: 2rem; }
+        .page-header h1 {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.3rem;
+        }
+        .page-header p { color: var(--text-muted); font-size: 0.95rem; }
+
+        /* ── KPI STATS ───────────────────────────── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: border-color 0.25s, background 0.25s, transform 0.25s;
+            cursor: default;
+        }
+
+        .stat-card:hover {
+            background: var(--surface-hover);
+            transform: translateY(-2px);
+        }
+
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+
+        .stat-icon.blue  { background: var(--accent-dim);  }
+        .stat-icon.purple{ background: var(--purple-dim);   }
+        .stat-icon.red   { background: var(--red-dim);      }
+        .stat-icon.yellow{ background: var(--yellow-dim);   }
+
+        .stat-card:hover.blue-card   { border-color: rgba(56,189,248,0.3);   }
+        .stat-card:hover.purple-card { border-color: rgba(167,139,250,0.3);  }
+        .stat-card:hover.red-card    { border-color: rgba(248,113,113,0.3);  }
+        .stat-card:hover.yellow-card { border-color: rgba(251,191,36,0.3);   }
+
+        .stat-value {
+            font-family: var(--font-display);
+            font-size: 1.9rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 0.2rem;
+        }
+
+        .stat-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+
+        /* Escalated stat pulse */
+        .stat-card.red-card .stat-value { color: var(--red); }
+
+        /* ── PLANS GRID ──────────────────────────── */
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(600px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* ── PLAN CARD ───────────────────────────── */
+        .plan-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+        }
+
+        .plan-card:hover {
+            border-color: var(--border-strong);
+            transform: translateY(-3px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+        }
+
+        .plan-card.has-escalation {
+            border-color: rgba(248,113,113,0.3);
+            box-shadow: 0 0 0 1px rgba(248,113,113,0.1);
+        }
+
+        /* Card Top Strip */
+        .card-strip {
+            height: 4px;
+            width: 100%;
+        }
+        .strip-pending  { background: linear-gradient(90deg, var(--yellow), #f59e0b); }
+        .strip-active   { background: linear-gradient(90deg, var(--accent), var(--purple)); }
+        .strip-escalated{ background: linear-gradient(90deg, var(--red), #dc2626); }
+
+        .card-body { padding: 1.5rem; }
+
+        /* Employee row */
+        .emp-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+        }
+
+        .emp-info { display: flex; align-items: center; gap: 0.85rem; }
+
+        .avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.1rem;
+            background: linear-gradient(135deg, var(--accent), var(--purple));
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .emp-name {
+            font-family: var(--font-display);
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+
+        .emp-meta { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem; }
+
+        /* Status badge */
+        .badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+        }
+        .badge.pending  { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(251,191,36,0.3); }
+        .badge.active   { background: var(--green-dim);  color: var(--green);  border: 1px solid rgba(52,211,153,0.3); }
+        .badge.escalated{ background: var(--red-dim);    color: var(--red);    border: 1px solid rgba(248,113,113,0.3);
+                          animation: pulse-badge 2s infinite; }
+
+        @keyframes pulse-badge {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(248,113,113,0.3); }
+            50%       { box-shadow: 0 0 0 5px rgba(248,113,113,0); }
+        }
+
+        /* Progress bar */
+        .progress-section { margin-bottom: 1.25rem; }
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+        .progress-label span:last-child { font-weight: 600; color: var(--text-soft); }
+
+        .progress-track {
+            height: 6px;
+            background: rgba(255,255,255,0.07);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, var(--accent), var(--purple));
+            transition: width 0.8s cubic-bezier(.4,0,.2,1);
+        }
+
+        /* Divider */
+        .divider { height: 1px; background: var(--border); margin: 1.25rem 0; }
+
+        /* Milestone list */
+        .milestones-header {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .milestone-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.85rem;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            transition: background 0.2s, border-color 0.2s;
+            margin-bottom: 0.5rem;
+            cursor: default;
+        }
+
+        .milestone-item:last-child { margin-bottom: 0; }
+        .milestone-item:hover { background: var(--surface-hover); border-color: var(--border); }
+
+        .milestone-item.ms-escalated {
+            background: rgba(248,113,113,0.06);
+            border-color: rgba(248,113,113,0.2);
+        }
+
+        .milestone-item.ms-completed {
+            background: rgba(52,211,153,0.04);
+            border-color: rgba(52,211,153,0.1);
+            opacity: 0.65;
+        }
+
+        .milestone-item.ms-awaiting {
+            background: rgba(251,188,4,0.06);
+            border-color: rgba(251,188,4,0.25);
+        }
+
+        .ms-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 5px;
+        }
+
+        .ms-dot.dot-escalated    { background: var(--red);    box-shadow: 0 0 8px var(--red); }
+        .ms-dot.dot-progress      { background: var(--accent);  box-shadow: 0 0 8px var(--accent); animation: blink 2s infinite; }
+        .ms-dot.dot-completed     { background: var(--green);  }
+        .ms-dot.dot-awaiting      { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); animation: blink 2s infinite; }
+        .ms-dot.dot-default       { background: var(--text-muted); }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.4; }
+        }
+
+        .ms-content { flex: 1; min-width: 0; }
+
+        .ms-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ms-desc {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 0.15rem;
+            line-height: 1.4;
+        }
+
+        .ms-tags {
+            display: flex;
+            gap: 0.4rem;
+            margin-top: 0.4rem;
+        }
+
+        .ms-tag { font-size: 0.65rem; font-weight: 600; padding: 0.18rem 0.5rem; border-radius: 4px; background: #f1f5f9; color: var(--text-muted); }
+        .ms-tag.tag-escalated { background: var(--red-dim); color: var(--red); }
+        .ms-tag.tag-progress  { background: var(--accent-dim); color: var(--accent); }
+        .ms-tag.tag-complete  { background: var(--green-dim); color: var(--green); }
+        .ms-tag.tag-awaiting  { background: var(--yellow-dim); color: var(--yellow); font-weight: 700; }
+
+        .ms-actions { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
+        .btn-ms-approve { padding: 0.3rem 0.8rem; font-size: 0.75rem; font-weight: 600; border: none; border-radius: 6px; background: var(--green); color: #fff; cursor: pointer; transition: opacity 0.2s, transform 0.2s; }
+        .btn-ms-approve:hover { opacity: 0.85; transform: translateY(-1px); }
+        .btn-ms-reject  { padding: 0.3rem 0.8rem; font-size: 0.75rem; font-weight: 600; border: 1px solid var(--red); border-radius: 6px; background: var(--red-dim); color: var(--red); cursor: pointer; transition: opacity 0.2s, transform 0.2s; }
+        .btn-ms-reject:hover  { opacity: 0.85; transform: translateY(-1px); }
+
+        /* Approve / Active footer */
+        .card-footer { padding: 0 1.5rem 1.5rem; }
+
+        .btn-approve {
+            width: 100%;
+            padding: 0.85rem;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #38bdf8, #7c3aed);
+            color: #fff;
+            font-family: var(--font-display);
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 0.01em;
+            transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 20px rgba(56,189,248,0.25);
+        }
+
+        .btn-approve:hover:not(:disabled) {
+            opacity: 0.92;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(56,189,248,0.35);
+        }
+
+        .btn-approve:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .active-footer {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--green);
+            font-weight: 500;
+        }
+
+        .active-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: blink 2s infinite;
+            flex-shrink: 0;
+        }
+
+        /* Escalation alert */
+        .escalation-alert {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.85rem 1rem;
+            border-radius: 10px;
+            background: rgba(248,113,113,0.08);
+            border: 1px solid rgba(248,113,113,0.25);
+            margin-bottom: 1.25rem;
+            font-size: 0.85rem;
+            color: #fca5a5;
+        }
+
+        /* Empty state */
+        .empty { 
+            text-align: center; 
+            padding: 5rem 2rem; 
+            color: var(--text-muted); 
+            border: 1px dashed var(--border);
+            border-radius: var(--radius);
+        }
+        .empty .emoji { font-size: 3rem; margin-bottom: 1rem; }
+        .empty p { font-size: 1rem; }
+
+        /* ── RESPONSIVE ──────────────────────────── */
+        @media (max-width: 900px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .plans-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 600px) {
+            nav { padding: 0 1rem; }
+            main { padding: 1.5rem 1rem 3rem; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <!-- NAV -->
+    <nav class="navbar">
+        <div class="logo">Onboard<span>Ops</span></div>
+        <div class="nav-links">
+            {% if user_role == 'manager' %}
+            <a href="/dashboard" class="active">Dashboard</a>
+            {% endif %}
+            {% if user_role == 'employee' %}
+            <a href="/employee">Employee Portal</a>
+            {% endif %}
+            <a href="/login" style="color:var(--text-muted); font-size:0.9rem; margin-left:1rem;">Logout</a>
+            <div class="notification-bell" title="Notifications" onclick="toggleNotifications()">
+                🔔<span id="notif-count" class="notif-count"></span>
+            </div>
+            <div id="notif-dropdown" class="notif-dropdown" style="display:none; position:absolute; right:2rem; top:64px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); width:300px; max-height:400px; overflow-y:auto; z-index:200; box-shadow:0 10px 30px rgba(0,0,0,0.1);">
+                <div id="notif-list" style="padding:0.5rem;"></div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Page header -->
+        <div class="page-header">
+            <h1>Manager Dashboard</h1>
+            <p>Monitor onboarding plans, approve milestones, and resolve escalations in real time.</p>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="stats-grid">
+            <div class="stat-card blue-card">
+                <div class="stat-icon blue">📋</div>
+                <div>
+                    <div class="stat-value">{{ stats.total_plans }}</div>
+                    <div class="stat-label">Total Plans</div>
+                </div>
+            </div>
+            <div class="stat-card purple-card">
+                <div class="stat-icon purple">🔄</div>
+                <div>
+                    <div class="stat-value">{{ stats.active_plans }}</div>
+                    <div class="stat-label">Active Plans</div>
+                </div>
+            </div>
+            <div class="stat-card red-card">
+                <div class="stat-icon red">🚨</div>
+                <div>
+                    <div class="stat-value">{{ stats.escalated_items }}</div>
+                    <div class="stat-label">Escalations</div>
+                </div>
+            </div>
+            <div class="stat-card yellow-card">
+                <div class="stat-icon yellow">💬</div>
+                <div>
+                    <div class="stat-value">{{ stats.pending_checkins }}</div>
+                    <div class="stat-label">Pending Check-Ins</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Plans -->
+        <div class="plans-grid">
+            {% for ep in enriched_plans %}
+            {% set plan = ep.plan %}
+            {% set emp  = ep.employee %}
+            {% set has_escalation = ep.escalated > 0 %}
+
+            <div class="plan-card {% if has_escalation %}has-escalation{% endif %}" id="card-{{ plan.plan_id }}">
+
+                <!-- Colour strip -->
+                <div class="card-strip 
+                    {% if has_escalation %}strip-escalated
+                    {% elif plan.status == 'ACTIVE' %}strip-active
+                    {% else %}strip-pending{% endif %}">
+                </div>
+
+                <div class="card-body">
+                    <!-- Employee row -->
+                    <div class="emp-row">
+                        <div class="emp-info">
+                            <div class="avatar">
+                                {{ emp.full_name[0] if emp else '?' }}
+                            </div>
+                            <div>
+                                <div class="emp-name">{{ emp.full_name if emp else plan.employee_id }}</div>
+                                <div class="emp-meta">
+                                    {{ emp.job_title if emp else '' }}
+                                    {% if emp and emp.department %} · {{ emp.department }}{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <span class="badge 
+                            {% if has_escalation %}escalated
+                            {% elif plan.status == 'ACTIVE' %}active
+                            {% else %}pending{% endif %}">
+                            {% if has_escalation %}🚨 Escalated
+                            {% elif plan.status == 'ACTIVE' %}Active
+                            {% else %}Needs Approval{% endif %}
+                        </span>
+                    </div>
+
+                    <!-- Escalation alert -->
+                    {% if has_escalation %}
+                    <div class="escalation-alert">
+                        🚨 <strong>{{ ep.escalated }} milestone(s) escalated</strong> — employee has reported blockers. Immediate attention required.
+                    </div>
+                    {% endif %}
+
+                    <!-- Progress bar -->
+                    <div class="progress-section">
+                        <div class="progress-label">
+                            <span>Milestone Progress</span>
+                            <span>{{ ep.completed }}/{{ ep.total }} complete · {{ ep.progress_pct }}%</span>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill" style="width: {{ ep.progress_pct }}%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <!-- Milestones -->
+                    <div class="milestones-header">Onboarding Activities</div>
+                    {% for ms in ep.milestones %}
+                    <div class="milestone-item
+                        {% if ms.status == 'ESCALATED' %}ms-escalated
+                        {% elif ms.status == 'COMPLETED' %}ms-completed
+                        {% elif ms.status == 'AWAITING_APPROVAL' %}ms-awaiting{% endif %}"
+                        id="ms-row-{{ ms.milestone_id }}">
+                        <div class="ms-dot 
+                            {% if ms.status == 'ESCALATED' %}dot-escalated
+                            {% elif ms.status == 'IN_PROGRESS' %}dot-progress
+                            {% elif ms.status == 'COMPLETED' %}dot-completed
+                            {% elif ms.status == 'AWAITING_APPROVAL' %}dot-awaiting
+                            {% else %}dot-default{% endif %}">
+                        </div>
+                        <div class="ms-content">
+                            <div class="ms-title">{{ ms.title }}</div>
+                            <div class="ms-desc">{{ ms.description }}</div>
+                            <div class="ms-tags">
+                                <span class="ms-tag 
+                                    {% if ms.status == 'ESCALATED' %}tag-escalated
+                                    {% elif ms.status == 'IN_PROGRESS' %}tag-progress
+                                    {% elif ms.status == 'COMPLETED' %}tag-complete
+                                    {% elif ms.status == 'AWAITING_APPROVAL' %}tag-awaiting{% endif %}">
+                                    {{ ms.status.replace('_', ' ') }}
+                                </span>
+                                <span class="ms-tag">{{ ms.category }}</span>
+                                <span class="ms-tag">SLA {{ ms.sla_days }}d</span>
+                            </div>
+                            {% if ms.status == 'AWAITING_APPROVAL' %}
+                            <div class="ms-actions">
+                                <button class="btn-ms-approve" onclick="approveMilestone('{{ ms.milestone_id }}')">
+                                    ✓ Approve
+                                </button>
+                                <button class="btn-ms-reject" onclick="rejectMilestone('{{ ms.milestone_id }}')">
+                                    ✗ Reject
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <div class="divider"></div>
+                    <div class="emp-meta">
+                        Plan ID: {{ plan.plan_id[:12] }}... &nbsp;·&nbsp;
+                        Generated {{ plan.generated_at.strftime('%d %b %Y') }}
+                    </div>
+                </div>
+
+                <!-- Card footer action -->
+                <div class="card-footer">
+                    {% if plan.status == 'PENDING_MANAGER_APPROVAL' %}
+                    <button class="btn-approve" id="btn-{{ plan.plan_id }}" onclick="approvePlan('{{ plan.plan_id }}')">
+                        ✅ &nbsp;Approve Onboarding Plan
+                    </button>
+                    {% else %}
+                    <div class="active-footer" style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                        <div style="display:flex; align-items:center;">
+                            <div class="active-dot"></div>
+                            Plan is active
+                        </div>
+                        <button class="btn-assign" onclick="openAssignModal('{{ plan.plan_id }}', '{{ emp.full_name }}')" style="padding: 0.4rem 0.8rem; background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); border-radius: 4px; cursor: pointer; font-family: var(--font-body); font-weight: 500; transition: all 0.2s;">+ Assign Activity</button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="empty">
+                <div class="emoji">🚀</div>
+                <p>No onboarding plans yet. Trigger a webhook to generate the first plan.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <!-- Assign Modal -->
+    <div id="assign-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
+        <div style="background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:2rem; width:100%; max-width:400px; color:var(--text); box-shadow:0 25px 50px -12px rgba(0, 0, 0, 0.15);">
+            <h3 style="margin-bottom:1rem; font-family:var(--font-display);">Assign to <span id="assign-emp-name" style="color:var(--accent);"></span></h3>
+            <form id="assign-form">
+                <input type="hidden" id="assign-plan-id" name="plan_id">
+                <div style="margin-bottom:1rem;">
+                    <label style="display:block; margin-bottom:0.5rem; color:var(--text-muted); font-size:0.9rem;">Activity Title</label>
+                    <input type="text" id="assign-title" name="title" required style="width:100%; padding:0.75rem; background:var(--surface); border:1px solid var(--border); color:var(--text); border-radius:8px; font-family:var(--font-body);">
+                </div>
+                <div style="margin-bottom:1rem;">
+                    <label style="display:block; margin-bottom:0.5rem; color:var(--text-muted); font-size:0.9rem;">Description</label>
+                    <textarea id="assign-desc" name="description" required style="width:100%; padding:0.75rem; background:var(--surface); border:1px solid var(--border); color:var(--text); border-radius:8px; height:80px; font-family:var(--font-body); resize:none;"></textarea>
+                </div>
+                <div style="margin-bottom:1.5rem;">
+                    <label style="display:block; margin-bottom:0.5rem; color:var(--text-muted); font-size:0.9rem;">SLA Limit (Days)</label>
+                    <input type="number" id="assign-sla" name="sla_days" value="2" required min="1" style="width:100%; padding:0.75rem; background:var(--surface); border:1px solid var(--border); color:var(--text); border-radius:8px; font-family:var(--font-body);">
+                </div>
+                <div style="display:flex; justify-content:flex-end; gap:1rem;">
+                    <button type="button" onclick="closeAssignModal()" style="padding:0.6rem 1.2rem; background:transparent; border:1px solid var(--border); color:var(--text); border-radius:8px; cursor:pointer; font-family:var(--font-body);">Cancel</button>
+                    <button type="submit" style="padding:0.6rem 1.2rem; background:var(--accent); border:none; color:#000; border-radius:8px; cursor:pointer; font-weight:600; font-family:var(--font-body);">Assign Activity</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        async function approvePlan(planId) {
+            const btn = document.getElementById(`btn-${planId}`);
+            btn.disabled = true;
+            btn.textContent = "Approving…";
+            try {
+                const res = await fetch(`/plans/${planId}/approve`, { method: "POST" });
+                if (res.ok) {
+                    btn.textContent = "✅ Approved!";
+                    setTimeout(() => location.reload(), 900);
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    alert(data.detail || "Could not approve. Please try again.");
+                    btn.disabled = false;
+                    btn.textContent = "✅ Approve Onboarding Plan";
+                }
+            } catch(e) {
+                alert("Network error — is the server running?");
+                btn.disabled = false;
+                btn.textContent = "✅ Approve Onboarding Plan";
+            }
+        }
+
+        async function approveMilestone(msId) {
+            const row = document.getElementById(`ms-row-${msId}`);
+            try {
+                const res = await fetch(`/milestones/${msId}/approve`, { method: "POST" });
+                if (res.ok) {
+                    row.style.opacity = '0.5';
+                    row.querySelector('.ms-actions').innerHTML = '<span style="font-size:0.8rem;color:var(--green);font-weight:600;">✓ Approved — marked Completed</span>';
+                    setTimeout(() => location.reload(), 1200);
+                } else {
+                    alert("Could not approve milestone.");
+                }
+            } catch(e) { alert("Network error."); }
+        }
+
+        async function rejectMilestone(msId) {
+            const row = document.getElementById(`ms-row-${msId}`);
+            try {
+                const res = await fetch(`/milestones/${msId}/reject`, { method: "POST" });
+                if (res.ok) {
+                    row.querySelector('.ms-actions').innerHTML = '<span style="font-size:0.8rem;color:var(--red);font-weight:600;">✗ Rejected — sent back to employee</span>';
+                    setTimeout(() => location.reload(), 1200);
+                } else {
+                    alert("Could not reject milestone.");
+                }
+            } catch(e) { alert("Network error."); }
+        }
+
+        // Modal logic
+        function openAssignModal(planId, empName) {
+            document.getElementById('assign-plan-id').value = planId;
+            document.getElementById('assign-emp-name').textContent = empName;
+            document.getElementById('assign-title').value = '';
+            document.getElementById('assign-desc').value = '';
+            document.getElementById('assign-modal').style.display = 'flex';
+        }
+
+        function closeAssignModal() {
+            document.getElementById('assign-modal').style.display = 'none';
+        }
+
+        document.getElementById('assign-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.textContent;
+            btn.textContent = "Assigning...";
+            btn.disabled = true;
+
+            const plan_id = document.getElementById('assign-plan-id').value;
+            const title = document.getElementById('assign-title').value;
+            const description = document.getElementById('assign-desc').value;
+            const sla_days = parseInt(document.getElementById('assign-sla').value);
+            
+            try {
+                const res = await fetch('/milestones/assign', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ plan_id, title, description, sla_days })
+                });
+                if (res.ok) {
+                    closeAssignModal();
+                    location.reload();
+                } else {
+                    alert('Failed to assign activity');
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Network error');
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        });
+
+        // Toggle notification dropdown visibility
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notif-dropdown');
+            dropdown.style.display = dropdown.style.display === 'none' || dropdown.style.display === '' ? 'block' : 'none';
+        }
+
+        // Render notification list into dropdown
+        function renderNotifications(list) {
+            const listEl = document.getElementById('notif-list');
+            listEl.innerHTML = '';
+            if (list.length === 0) {
+                listEl.innerHTML = '<div style="padding:0.5rem; color:var(--text-muted);">No notifications.</div>';
+                return;
+            }
+            list.forEach(n => {
+                const item = document.createElement('div');
+                item.style.padding = '0.5rem';
+                item.style.borderBottom = '1px solid var(--border)';
+                item.style.cursor = 'pointer';
+                item.innerHTML = `<strong>${n.title}</strong><br/><span style="font-size:0.8rem; color:var(--text-muted);">${n.body}</span>`;
+                item.onclick = async () => {
+                    // Mark as read (optional)
+                    try {
+                        await fetch(`/notifications/mark/${n.id}`, { method: "POST" });
+                    } catch(e) { console.error(e); }
+                    if (n.link) {
+                        window.location.href = n.link;
+                    }
+                };
+                listEl.appendChild(item);
+            });
+        }
+
+        // Notification polling (updated to render list)
+        async function fetchNotifications() {
+            try {
+                const res = await fetch('/notifications');
+                if (res.ok) {
+                    const data = await res.json();
+                    const countEl = document.getElementById('notif-count');
+                    countEl.textContent = data.unread_count > 0 ? data.unread_count : '';
+                    renderNotifications(data.notifications);
+                }
+            } catch(e) {
+                console.error('Failed to fetch notifications', e);
+            }
+        }
+        // Poll every 30 seconds
+        setInterval(fetchNotifications, 30000);
+        // Initial fetch
+        fetchNotifications();
+
+    </script>
+</body>
+</html>

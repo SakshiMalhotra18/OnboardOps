@@ -5,9 +5,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# On Vercel the root filesystem is read-only; /tmp is always writable.
-_default_db = "sqlite:////tmp/onboardops.db" if os.getenv("VERCEL") else "sqlite:///./onboardops.db"
-DATABASE_URL = os.getenv("DATABASE_URL", _default_db)
+# On Vercel, force writable /tmp SQLite unless a valid external SQLite is specified.
+raw_db_url = os.getenv("DATABASE_URL", "")
+if os.getenv("VERCEL"):
+    if raw_db_url.startswith("sqlite"):
+        DATABASE_URL = raw_db_url
+    else:
+        DATABASE_URL = "sqlite:////tmp/onboardops.db"
+else:
+    DATABASE_URL = raw_db_url if raw_db_url else "sqlite:///./onboardops.db"
 
 if DATABASE_URL.startswith("sqlite"):
     engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})

@@ -2,6 +2,7 @@ import os
 import uuid
 from typing import TypedDict, Annotated, List, Dict, Any
 from langgraph.graph import StateGraph, END
+from langfuse.langchain import CallbackHandler
 from src.schema import PlanOutputSchema
 from src.database import SessionLocal
 from src.models import Employee, Plan, Milestone
@@ -43,9 +44,13 @@ def retrieve_documents(state: AgentState):
     return {"retrieved_docs": docs, "fallback_mode": fallback}
 
 def route_after_retrieval(state: AgentState):
-    if state.get("fallback_mode"):
-        return "low_context_fallback"
-    return "synthesize_plan"
+    route = "low_context_fallback" if state.get("fallback_mode") else "synthesize_plan"
+    try:
+        from langfuse import get_client
+        get_client().update_current_span(metadata={"route_taken": route})
+    except Exception:
+        pass
+    return route
 
 def low_context_fallback(state: AgentState):
     print(f"Fallback mode triggered for {state['employee_id']}. Need manual manager input.")
@@ -150,5 +155,9 @@ graph = build_graph()
 
 def synthesize_plan(employee_id: str):
     print(f"Starting plan synthesis for {employee_id}")
-    final_state = graph.invoke({"employee_id": employee_id})
+    langfuse_handler = CallbackHandler()
+    final_state = graph.invoke(
+        {"employee_id": employee_id},
+        config={"callbacks": [langfuse_handler]},
+    )
     return final_state

@@ -8,3 +8,4 @@ python-multipart
 apscheduler
 langgraph
 langchain-anthropic
+langfuse
